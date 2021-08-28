@@ -50,10 +50,38 @@
 }
 
 .btn {
-  position: absolute;
+  position: relative;
+  display: inline-block;
   left: 90px;
+  width: fit-content;
+  height: 40px;
+  padding: 0.5em 1em;
+  text-decoration: none;
+  background: #668ad8;/*Button Color*/
+  color: #FFF;
+  border-bottom: solid 4px #627295;
+  border-radius: 3px;
+  margin: 3px;
 }
 
-.divMain {
-  align-items: center;
+
+.lift {
+  position: relative;
+  left: 250px;
+  top: 0px;
+  width: 100px;
+  height: 120px;
+  background-color: #ff944d;
+  margin: 8px;
+  transition: top 1.85s ease-out 0.5s;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+.child {
+  margin: 30px;
+  height: 150px;
 }
