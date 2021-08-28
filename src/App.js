@@ -23,6 +23,8 @@ function Floor(props) {
       <h2 className="floorname" id={hId}>Floor {props.number}</h2>
 
 
+
+
     </div>
   
   )
@@ -86,6 +88,8 @@ class App extends React.Component {
           <Floor number="1" up={true} onClick={(e) => {this.handleClick(e)}}/>
         </div>
         <div className="lift" id="lift"></div>
+        
+        <a href="https://github.com/kakashiisawesome/lift-simulation"><button className="btn">CODE</button></a>
         
         
 
