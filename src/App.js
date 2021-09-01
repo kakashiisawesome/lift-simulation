@@ -23,8 +23,6 @@ function Floor(props) {
       <h2 className="floorname" id={hId}>Floor {props.number}</h2>
 
 
-
-
     </div>
   
   )
@@ -36,60 +34,89 @@ class App extends React.Component {
     super(props);
 
     this.lift_top_init = null;
+    // Common floor queue
     this.floor_requests = [];
     this.interval_id = null;
     // Which lift is at which floor 
-    this.lift_state = new Map([["lift-1", 1], ["lift-2", 1], ["lift-3", 1], ["lift-4", 1]])
+    this.lift_state = new Map([["lift-1", 1], ["lift-2", 1], ["lift-3", 1], ["lift-4", 1]]);
+
+    // Is lift in transition
+    this.lift_in_transition = new Map([["lift-1", false], ["lift-2", false], ["lift-3", false], ["lift-4", false]]);
+
+    // Floor queue for each lift
+    this.lift_queue = new Map([["lift-1", []], ["lift-2", []], ["lift-3", []], ["lift-4", []]]);
   }
 
   componentDidMount() {  
     this.lift_top_init = this.getTopValue("lift-1");
 
-    this.moveLift("lift-1", "floor-1");
-    this.moveLift("lift-2", "floor-1");
-    this.moveLift("lift-3", "floor-1");
-    this.moveLift("lift-4", "floor-1");
+    for (let i = 0; i < 4; i++) {
+      let lift_id = "lift-" + (i+1);
+      this.moveLift(lift_id, "floor-1");
+    }
 
+    // Common floor queue handler
     this.interval_id = setInterval(this.processFloorRequest.bind(this), 100);
+
+    // Add handlers for lift queues
+    for (let i = 0; i < 4; i++) {
+      
+      // Moves the lift if it is not in transition and there are floors in it's queue to move to
+      setInterval((function () {
+        let lift_id = "lift-" + (i+1);
+        let floors = this.lift_queue.get(lift_id);
+        if (!this.lift_in_transition.get(lift_id) && (floors.length > 0)) {
+          let floor_id = floors.shift();
+          this.moveLift(lift_id, floor_id);
+        }
+      }).bind(this), 100);
+      
+    }
+
+    // Add transition event listeners
+    for (let i = 0; i < 4; i++) {
+      let lift = document.getElementById("lift-" + (i+1));
+      // Transition started
+      lift.addEventListener("transitionrun", (function () {
+        this.lift_in_transition.set(lift.id, true);
+      }).bind(this));
+
+      // Transition ended
+      lift.addEventListener("transitionend", (function () {
+        this.lift_in_transition.set(lift.id, false);
+      }).bind(this));
+    }
 
   }
 
+  // Add a floor to common floor queue
   addFloorRequest(floor_id) {
     this.floor_requests.push(floor_id);
   }
 
+  // Pop a floor from common floor queue
   popFloorRequest() {
     if (this.floor_requests.length > 0) {
       return this.floor_requests.shift();
     }
   }
 
+  // Gets a floor from common floor queue and sends it to the closest lift's floor queue
   processFloorRequest() {
     let requestedFloorId = this.popFloorRequest();
+
     if(requestedFloorId !== undefined) {
       let lift_id = this.getClosestLift(requestedFloorId);
-      this.moveLift(lift_id, requestedFloorId);
+
+      // Add floor to the lift's queue
+      let curr_queue = this.lift_queue.get(lift_id);
+      curr_queue.push(requestedFloorId);
+      this.lift_queue.set(lift_id, curr_queue);
+
     }
   }
 
-  // getClosestLift(floor_id) {
-  //   let floorTop = this.getTopValue(floor_id);
-  //   let closestLiftId = null;
-  //   let minDistance = Number.MAX_SAFE_INTEGER;
-
-  //   for (let i = 0; i < 4; i++) {
-  //     let liftId = "lift-" + (i+1);
-  //     let liftTop = this.getTopValue("lift-" + (i+1));
-  //     let distance = Math.abs(floorTop - liftTop);
-  //     if (distance <= minDistance) {
-  //       minDistance = distance;
-  //       closestLiftId = liftId;
-  //     }
-  //   }
-
-  //   return closestLiftId;
-  // }
-
+  // Get the lift's id closest to the dest_floor_id
   getClosestLift(dest_floor_id) {
     let dest_floor_number = parseInt(dest_floor_id.split("-")[1]);
     let closestLiftId = this.lift_state.keys[0];
@@ -119,22 +146,16 @@ class App extends React.Component {
   moveLift(lift_id, dest_floor_id) {
     let lift = document.getElementById(lift_id);
     let liftHeight = lift.getBoundingClientRect().height;
-    
 
-    // let floor = document.getElementById(dest_floor_id);
-    // let floorTop = floor.getBoundingClientRect().top;
-    // let viewTop = document.documentElement.scrollTop;
-    // let floorTopAbs = floorTop + viewTop;
     let floorTopAbs = this.getTopValue(dest_floor_id);
 
     let distance = Math.abs(floorTopAbs - this.lift_top_init) + liftHeight;
 
     lift.style.top = -distance + "px";
 
-    // Update lift state
+    // Update lift's current floor number
     let floorNumber = parseInt(dest_floor_id.split("-")[1]);
     this.lift_state.set(lift_id, floorNumber);
-    console.log(this.lift_state);
 
   }
 
@@ -143,11 +164,11 @@ class App extends React.Component {
     let floorId = "floor-" + button.id.split("-")[1];
 
     this.addFloorRequest(floorId);
-    
-
   }
 
   render() {
+    let num_floors = 10;
+    const floorNumbers = Array.from(Array(num_floors).keys());
     return (
       <div>
         <h1>Lift Simulation</h1>
@@ -155,17 +176,19 @@ class App extends React.Component {
         <br/>
         <br/>
         <div className="container">
-          <Floor number="10" down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="9" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="8" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="7" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="6" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="5" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="4" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="3" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="2" up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
-          <Floor number="1" up={true} onClick={(e) => {this.handleClick(e)}}/>
+          {floorNumbers.map(i => {
+            if (i === 0) {
+              return <Floor number={floorNumbers.length - i} down={true} onClick={(e) => {this.handleClick(e)}}/>
+            } 
+            if (i === floorNumbers.length - 1) {
+              return <Floor number={floorNumbers.length - i} up={true} onClick={(e) => {this.handleClick(e)}}/>
+            } 
+            
+            return <Floor number={floorNumbers.length - i} up={true} down={true} onClick={(e) => {this.handleClick(e)}}/>
+            
+          })}
         </div>
+
         <div className="lift-container">
           <div className="lift" id="lift-1"></div>
           <div className="lift" id="lift-2"></div>
