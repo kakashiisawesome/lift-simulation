@@ -90,5 +90,5 @@
   height: 120px;
   background-color: #ff944d;
   margin: 50px;
-  transition: top 1.85s ease-out 0.5s;
+  transition: top 2.5s linear;
 }

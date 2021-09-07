@@ -69,7 +69,7 @@ class App extends React.Component {
           let floor_id = floors.shift();
           this.moveLift(lift_id, floor_id);
         }
-      }).bind(this), 100);
+      }).bind(this), 500);
       
     }
 
@@ -151,12 +151,37 @@ class App extends React.Component {
 
     let distance = Math.abs(floorTopAbs - this.lift_top_init) + liftHeight;
 
+    // Set transition duration
+    this.setTransitionDuration(lift, dest_floor_id, liftHeight, floorTopAbs);
+
+    // Move the lift
     lift.style.top = -distance + "px";
 
     // Update lift's current floor number
     let floorNumber = parseInt(dest_floor_id.split("-")[1]);
     this.lift_state.set(lift_id, floorNumber);
 
+  }
+
+  // Set transition duration of lift for getting constant speed
+  setTransitionDuration(lift, dest_floor_id, liftHeight, floorTopAbs) {
+    let lift_id = lift.id;
+    let curr_floor = this.lift_state.get(lift_id);
+    let dest_floor = parseInt(dest_floor_id.split("-")[1]);
+
+    if (dest_floor < curr_floor) {
+      liftHeight = liftHeight * -1;
+    }
+
+    let transitionSpeed = 125; // px per second
+
+    let liftTopAbs = this.getTopValue(lift_id);
+
+    let transitionDistance = Math.abs(floorTopAbs - liftTopAbs) + liftHeight;
+
+    let transitionDuration = transitionDistance/transitionSpeed;
+
+    lift.style.transitionDuration = transitionDuration + "s";
   }
 
   handleClick(e) {
